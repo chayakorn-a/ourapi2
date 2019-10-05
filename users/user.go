@@ -1,9 +1,9 @@
 package users
 
 import (
-	"encoding/json"
 	"net/http"
 
+	"github.com/chayakorn-a/ourapi2/typicode"
 	"github.com/labstack/echo"
 )
 
@@ -15,17 +15,30 @@ type User struct {
 	Phone    string `json:"phone"`
 }
 
-func GetUsers(c echo.Context) error {
-	resp, err := http.Get("https://jsonplaceholder.typicode.com/users")
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err)
-	}
+type Decoder interface {
+	Decode(result interface{}) error
+}
 
+type userAPI struct {
+	service Decoder
+}
+
+func (up *userAPI) GetUsers(c echo.Context) error {
 	uu := []User{}
-	err = json.NewDecoder(resp.Body).Decode(&uu)
+
+	err := up.service.Decode(&uu)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, uu)
+}
+
+func GetUsers(c echo.Context) error {
+	api := &userAPI{
+		//service: &typicode{},
+		service: typicode.Get("/users"),
+	}
+
+	return api.GetUsers(c)
 }
